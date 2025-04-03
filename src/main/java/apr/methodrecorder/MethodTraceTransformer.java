@@ -57,6 +57,8 @@ public class MethodTraceTransformer implements ClassFileTransformer {
                     startLine = Math.min(startLine, current);
                     endLine = Math.max(endLine, current);
                 }
+                startLine -= 1;
+                endLine += 1;
             }
         }
 
