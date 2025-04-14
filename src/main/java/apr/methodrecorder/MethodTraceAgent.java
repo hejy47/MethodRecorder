@@ -25,6 +25,6 @@ public class MethodTraceAgent {
             return;
         }
 
-        inst.addTransformer(new MethodTraceTransformer(includes, outputFile));
+        inst.addTransformer(new MethodTraceTransformer(includes, outputFile), true);
     }
 }

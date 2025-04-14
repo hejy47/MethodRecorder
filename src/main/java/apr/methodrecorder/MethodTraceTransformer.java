@@ -23,20 +23,38 @@ public class MethodTraceTransformer implements ClassFileTransformer {
                             Class<?> classBeingRedefined,
                             ProtectionDomain protectionDomain,
                             byte[] classfileBuffer) {
+        if (className == null || !shouldInclude(className)) {
+            return classfileBuffer;
+        }
+        ClassPool cp = ClassPool.getDefault();
+        CtClass ctClass = null;
         try {
-            if (className == null || !shouldInclude(className)) {
+            ctClass = cp.get(className.replace('/', '.'));
+            if (ctClass.isFrozen()) {
+                if (ctClass.isPrimitive() || className.startsWith("java.")) {
+                    return classfileBuffer;
+                }
+            	ctClass.defrost();
+            }
+
+            if (ctClass.isInterface() || ctClass.isAnnotation()) {
                 return classfileBuffer;
             }
-            ClassPool cp = ClassPool.getDefault();
-            CtClass ctClass = cp.makeClass(new java.io.ByteArrayInputStream(classfileBuffer));
 
             for (CtMethod ctMethod : ctClass.getDeclaredMethods()) {
+            	if (Modifier.isAbstract(ctMethod.getModifiers())) {
+            		continue;
+            	}
                 instrumentMethod(ctClass, ctMethod);
             }
 
             return ctClass.toBytecode();
         } catch (Exception e) {
             e.printStackTrace();
+        } finally {
+            if (ctClass != null) {
+                ctClass.detach();
+            }
         }
         return classfileBuffer;
     }
@@ -89,9 +107,7 @@ public class MethodTraceTransformer implements ClassFileTransformer {
         return false;
     }
 
-    private boolean matches(String className, String include) {
-        String classPath = className.replace('.', '/');
-
+    private boolean matches(String classPath, String include) {
         if (include.endsWith("$*")) {
             String prefix = include.substring(0, include.length() - 2).replace('.', '/');
             return classPath.startsWith(prefix);

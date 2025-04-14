@@ -13,7 +13,7 @@ public class MethodTraceLogger {
 
         logFile = fileName;
         try {
-            writer = new PrintWriter(new FileWriter(logFile, true));
+            writer = new PrintWriter(new FileWriter(logFile, false));
         } catch (IOException e) {
             System.err.println("[MethodTrace] Failed to init log file: " + e.getMessage());
         }
