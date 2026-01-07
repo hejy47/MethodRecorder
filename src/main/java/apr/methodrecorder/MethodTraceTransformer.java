@@ -48,6 +48,10 @@ public class MethodTraceTransformer implements ClassFileTransformer {
                 instrumentMethod(ctClass, ctMethod);
             }
 
+            for (CtConstructor ctConstructor : ctClass.getDeclaredConstructors()) {
+                instrumentMethod(ctClass, ctConstructor);
+            }
+
             return ctClass.toBytecode();
         } catch (Exception e) {
             e.printStackTrace();
@@ -59,8 +63,8 @@ public class MethodTraceTransformer implements ClassFileTransformer {
         return classfileBuffer;
     }
 
-    private void instrumentMethod(CtClass ctClass, CtMethod ctMethod) throws Exception {
-        MethodInfo methodInfo = ctMethod.getMethodInfo();
+    private void instrumentMethod(CtClass ctClass, CtBehavior ctBehavior) throws Exception {
+        MethodInfo methodInfo = ctBehavior.getMethodInfo();
         CodeAttribute codeAttr = methodInfo.getCodeAttribute();
         int startLine = -1;
         int endLine = -1;
@@ -81,21 +85,21 @@ public class MethodTraceTransformer implements ClassFileTransformer {
         }
 
         String className = ctClass.getName().replace('/', '.');
-        String methodName = ctMethod.getName();
+        String methodName = ctBehavior.getName();
 
         // Insert start log
         String startLog = String.format(
                 "%s.logStart(\"%s\", \"%s\", %d, %d);",
                 LOGGER_CLASS, className, methodName, startLine, endLine
         );
-        ctMethod.insertBefore(startLog);
+        ctBehavior.insertBefore(startLog);
 
         // Insert end log
         String endLog = String.format(
                 "%s.logEnd(\"%s\", \"%s\", %d, %d);",
                 LOGGER_CLASS, className, methodName, startLine, endLine
         );
-        ctMethod.insertAfter(endLog, true);
+        ctBehavior.insertAfter(endLog, true);
     }
 
     private boolean shouldInclude(String className) {
